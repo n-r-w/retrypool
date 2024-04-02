@@ -1,3 +1,9 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/n-r-w/retrypool.svg)](https://pkg.go.dev/github.com/n-r-w/retrypool)
+[![Go Coverage](https://github.com/n-r-w/retrypool/wiki/coverage.svg)](https://raw.githack.com/wiki/n-r-w/retrypool/coverage.html)
+![CI Status](https://github.com/n-r-w/retrypool/actions/workflows/go.yml/badge.svg)
+[![Stability](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
+[![Go Report](https://goreportcard.com/badge/github.com/n-r-w/retrypool)](https://goreportcard.com/badge/github.com/n-r-w/retrypool)
+
 # RetryPool
 
 The RetryPool package provides a mechanism for executing tasks with automatic retry and error handling capabilities. It allows you to define a work function that performs the actual task, an error handling function that determines whether to retry or stop based on the error, and a success handling function that is called when the task is successfully completed.
