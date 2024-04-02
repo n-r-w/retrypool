@@ -44,10 +44,11 @@ type MetricGaugeFunc func(float64)
 type RetryPool[T any] struct {
 	opts options[T] // parameters
 
-	inboundQueueSize int         // size of the queue for processing. It receives both incoming data and data from the error queue
-	retryQueueSize   int         // size of the error queue. When it exceeds, the Add method will return false
-	workerCount      int         // number of goroutines that process the data
-	workFunc         WorkFunc[T] // function for processing data
+	inboundQueueSize int          // size of the queue for processing. It receives both incoming data and data from the error queue
+	retryQueueSize   int          // size of the error queue. When it exceeds, the Add method will return false
+	workerCount      int          // number of goroutines that process the data
+	workFunc         WorkFunc[T]  // function for processing data
+	errorFunc        ErrorFunc[T] // function for managing the lifetime of data in the error queue. If ErrorFunc returns true, the data is returned to the queue; otherwise, it is removed from it
 
 	muErrorQueue         sync.RWMutex
 	errorQueue           *deque.Deque[bufferItem[T]] // queue for retries
@@ -88,8 +89,8 @@ type bufferItem[T any] struct {
 }
 
 // New creates a RetryPool
-func New[T any](inboundQueueSize, retryQueueSize, workerCount int, workFunc WorkFunc[T], opts ...Option[T]) *RetryPool[T] {
-	if inboundQueueSize <= 0 || retryQueueSize <= 0 || workerCount <= 0 || workFunc == nil {
+func New[T any](inboundQueueSize, retryQueueSize, workerCount int, workFunc WorkFunc[T], errorFunc ErrorFunc[T], opts ...Option[T]) *RetryPool[T] {
+	if inboundQueueSize <= 0 || retryQueueSize <= 0 || workerCount <= 0 || workFunc == nil || errorFunc == nil {
 		panic("invalid parameters")
 	}
 
@@ -139,6 +140,7 @@ func New[T any](inboundQueueSize, retryQueueSize, workerCount int, workFunc Work
 		retryQueueSize:         retryQueueSize,
 		workerCount:            workerCount,
 		workFunc:               workFunc,
+		errorFunc:              errorFunc,
 	}
 
 	// Workers for processing queue
@@ -281,7 +283,7 @@ func (d *RetryPool[T]) Stop() {
 	errorLostOnStop := fmt.Errorf("data lost due to retrypool shutdown")
 	for {
 		if item, ok := d.getFromErrorQueue(); ok {
-			d.opts.errorFunc(errorLostOnStop, item.v, time.Since(item.t), true)
+			d.errorFunc(errorLostOnStop, item.v, time.Since(item.t), true)
 			if d.dataLostCountFunc != nil {
 				d.dataLostCountFunc() // Data is lost
 			}
@@ -335,7 +337,7 @@ func (d *RetryPool[T]) worker() {
 
 			closing := d.isClosing()
 
-			if d.opts.errorFunc(err, item.v, time.Since(item.t), // Age at the time of processing
+			if d.errorFunc(err, item.v, time.Since(item.t), // Age at the time of processing
 				// Pass the closing flag to indicate that we are permanently losing data and there will be no return to the queue
 				closing) && !closing {
 				// Add to the error queue on error. If the work is finished, do not add

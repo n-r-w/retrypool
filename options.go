@@ -25,13 +25,6 @@ func WithProcessingDelay[T any](delay time.Duration) Option[T] {
 	}
 }
 
-// WithErrorFunc function for managing the lifetime of data in the error queue. If ErrorFunc returns true, the data is returned to the queue; otherwise, it is removed from it.
-func WithErrorFunc[T any](f ErrorFunc[T]) Option[T] {
-	return func(o *options[T]) {
-		o.errorFunc = f
-	}
-}
-
 // WithSuccessFunc. Called when data is successfully sent after an error
 func WithSuccessFunc[T any](f SuccessFunc[T]) Option[T] {
 	return func(o *options[T]) {
@@ -65,7 +58,6 @@ type options[T any] struct {
 	retryDelay      time.Duration  // initial pause between retries
 	maxRetryDelay   time.Duration  // maximum pause between retries. Retry time will start with RetryDelay and double after each unsuccessful error queue processing
 	processingDelay time.Duration  // timeout based on which a context will be created and passed to the data processing function
-	errorFunc       ErrorFunc[T]   // function for managing the lifetime of data in the error queue. If ErrorFunc returns true, the data is returned to the queue; otherwise, it is removed from it
 	successFunc     SuccessFunc[T] // called when data is successfully sent after an error
 	maxAge          time.Duration  // maximum message lifetime. Used for monitoring purposes
 
