@@ -64,13 +64,12 @@ func main() {
     }
 
     // Create a new RetryPool
-    pool := retrypool.New(100, 100, 2, workFunc,
+    pool := retrypool.New(100, 100, 2, workFunc, errorFunc,
         retrypool.WithMaxAge[Data](time.Minute*10),
         retrypool.WithRetryDelay[Data](time.Second/2),
         retrypool.WithMaxRetryDelay[Data](time.Second),
         retrypool.WithProcessingDelay[Data](time.Hour),
-        retrypool.WithSuccessFunc[Data](successFunc),
-        retrypool.WithErrorFunc[Data](errorFunc))
+        retrypool.WithSuccessFunc[Data](successFunc))
 
     // Add tasks to the pool
     pool.Add(Data{Value: 1})
