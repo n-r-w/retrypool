@@ -47,12 +47,11 @@ func Test_RetryPoolDrain(t *testing.T) {
 		return age <= keepAge
 	}
 
-	pool := New(inboundQueueSize, errorQueueSize, workerCount, workFunc,
+	pool := New(inboundQueueSize, errorQueueSize, workerCount, workFunc, errorFunc,
 		WithMaxAge[int](time.Minute),
 		WithRetryDelay[int](retryDelay),
 		WithMaxRetryDelay[int](maxRetryDelay),
-		WithProcessingDelay[int](processingDelay),
-		WithErrorFunc[int](errorFunc))
+		WithProcessingDelay[int](processingDelay))
 
 	wg := &sync.WaitGroup{}
 	wg.Add(addWorkerCount)
@@ -122,12 +121,11 @@ func Test_RetryPoolProcess(t *testing.T) {
 		return false
 	}
 
-	pool := New(inboundQueueSize, errorQueueSize, workerCount, workFunc,
+	pool := New(inboundQueueSize, errorQueueSize, workerCount, workFunc, errorFunc,
 		WithMaxAge[int](time.Minute),
 		WithRetryDelay[int](retryDelay),
 		WithMaxRetryDelay[int](maxRetryDelay),
-		WithProcessingDelay[int](processingDelay),
-		WithErrorFunc[int](errorFunc))
+		WithProcessingDelay[int](processingDelay))
 
 	wg := &sync.WaitGroup{}
 	wg.Add(addWorkerCount)
@@ -183,12 +181,11 @@ func Test_RetryPoolInboundOverflow(t *testing.T) {
 		return true
 	}
 
-	pool := New(10, errorQueueSize, workerCount, workFunc,
+	pool := New(10, errorQueueSize, workerCount, workFunc, errorFunc,
 		WithMaxAge[int](time.Minute),
 		WithRetryDelay[int](retryDelay),
 		WithMaxRetryDelay[int](maxRetryDelay),
-		WithProcessingDelay[int](processingDelay),
-		WithErrorFunc[int](errorFunc))
+		WithProcessingDelay[int](processingDelay))
 
 	wg := &sync.WaitGroup{}
 	wg.Add(addWorkerCount)
@@ -250,12 +247,11 @@ func Test_RetryPoolErrorOverflow(t *testing.T) {
 		return true
 	}
 
-	pool := New(inboundQueueSize, 1, workerCount, workFunc,
+	pool := New(inboundQueueSize, 1, workerCount, workFunc, errorFunc,
 		WithMaxAge[int](time.Minute),
 		WithRetryDelay[int](retryDelay),
 		WithMaxRetryDelay[int](maxRetryDelay),
-		WithProcessingDelay[int](processingDelay),
-		WithErrorFunc[int](errorFunc))
+		WithProcessingDelay[int](processingDelay))
 
 	wg := &sync.WaitGroup{}
 	wg.Add(addWorkerCount)
@@ -266,7 +262,7 @@ func Test_RetryPoolErrorOverflow(t *testing.T) {
 	for i := 0; i < addWorkerCount; i++ {
 		go func() {
 			defer wg.Done()
-			for n := 0; n < addOpsCount; n++ {
+			for n := 0; n < 5000; n++ {
 				mutex.Lock()
 				counter++
 				c := counter
@@ -274,6 +270,7 @@ func Test_RetryPoolErrorOverflow(t *testing.T) {
 
 				if !pool.Add(c) {
 					atomic.StoreInt32(&isOverflow, 1)
+					break
 				} else {
 					mutex.Lock()
 					checkMap[c] = true
@@ -309,12 +306,11 @@ func Test_RetryPoolResend(t *testing.T) {
 		return true
 	}
 
-	pool := New(inboundQueueSize, errorQueueSize, workerCount, workFunc,
+	pool := New(inboundQueueSize, errorQueueSize, workerCount, workFunc, errorFunc,
 		WithMaxAge[int64](time.Minute),
 		WithRetryDelay[int64](time.Millisecond*100),
 		WithMaxRetryDelay[int64](time.Millisecond*200),
-		WithProcessingDelay[int64](processingDelay),
-		WithErrorFunc[int64](errorFunc))
+		WithProcessingDelay[int64](processingDelay))
 
 	wg := &sync.WaitGroup{}
 	wg.Add(addWorkerCount)
