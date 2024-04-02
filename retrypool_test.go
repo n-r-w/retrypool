@@ -262,7 +262,7 @@ func Test_RetryPoolErrorOverflow(t *testing.T) {
 	for i := 0; i < addWorkerCount; i++ {
 		go func() {
 			defer wg.Done()
-			for n := 0; n < addOpsCount; n++ {
+			for n := 0; n < 5000; n++ {
 				mutex.Lock()
 				counter++
 				c := counter
@@ -270,6 +270,7 @@ func Test_RetryPoolErrorOverflow(t *testing.T) {
 
 				if !pool.Add(c) {
 					atomic.StoreInt32(&isOverflow, 1)
+					break
 				} else {
 					mutex.Lock()
 					checkMap[c] = true
